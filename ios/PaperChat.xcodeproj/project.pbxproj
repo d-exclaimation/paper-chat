@@ -1,0 +1,454 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 55;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		5303FC3F2743DC7600701663 /* PaperChatApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5303FC3E2743DC7600701663 /* PaperChatApp.swift */; };
+		5303FC412743DC7600701663 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5303FC402743DC7600701663 /* ContentView.swift */; };
+		5303FC432743DC7800701663 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5303FC422743DC7800701663 /* Assets.xcassets */; };
+		5303FC462743DC7800701663 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5303FC452743DC7800701663 /* Preview Assets.xcassets */; };
+		5303FC4E2743E42C00701663 /* Button.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5303FC4D2743E42C00701663 /* Button.swift */; };
+		5303FC532743E50700701663 /* Swift+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5303FC522743E50700701663 /* Swift+Utils.swift */; };
+		5303FC572743F6B800701663 /* Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5303FC562743F6B800701663 /* Message.swift */; };
+		5303FC592743FE6500701663 /* FlippedUpsideDown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5303FC582743FE6500701663 /* FlippedUpsideDown.swift */; };
+		53EF4C2E2744CF0E00E84E56 /* Color+RGB.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53EF4C2D2744CF0E00E84E56 /* Color+RGB.swift */; };
+		53EF4C322744D51900E84E56 /* ChatScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53EF4C312744D51900E84E56 /* ChatScreen.swift */; };
+		53EF4C342744F34300E84E56 /* ChatMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53EF4C332744F34300E84E56 /* ChatMessageView.swift */; };
+		53EF4C3627450B9700E84E56 /* Room.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53EF4C3527450B9700E84E56 /* Room.swift */; };
+		53EF4C3827450E1D00E84E56 /* InputBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53EF4C3727450E1D00E84E56 /* InputBarView.swift */; };
+		53EF4C3A27451A9E00E84E56 /* InviteCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53EF4C3927451A9E00E84E56 /* InviteCodeView.swift */; };
+		53EF4C3D274520D800E84E56 /* Snackbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53EF4C3C274520D800E84E56 /* Snackbar.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		5303FC3B2743DC7600701663 /* PaperChat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PaperChat.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5303FC3E2743DC7600701663 /* PaperChatApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperChatApp.swift; sourceTree = "<group>"; };
+		5303FC402743DC7600701663 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		5303FC422743DC7800701663 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		5303FC452743DC7800701663 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		5303FC4D2743E42C00701663 /* Button.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Button.swift; sourceTree = "<group>"; };
+		5303FC522743E50700701663 /* Swift+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Swift+Utils.swift"; sourceTree = "<group>"; };
+		5303FC562743F6B800701663 /* Message.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Message.swift; sourceTree = "<group>"; };
+		5303FC582743FE6500701663 /* FlippedUpsideDown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlippedUpsideDown.swift; sourceTree = "<group>"; };
+		53EF4C2D2744CF0E00E84E56 /* Color+RGB.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+RGB.swift"; sourceTree = "<group>"; };
+		53EF4C312744D51900E84E56 /* ChatScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatScreen.swift; sourceTree = "<group>"; };
+		53EF4C332744F34300E84E56 /* ChatMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessageView.swift; sourceTree = "<group>"; };
+		53EF4C3527450B9700E84E56 /* Room.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Room.swift; sourceTree = "<group>"; };
+		53EF4C3727450E1D00E84E56 /* InputBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputBarView.swift; sourceTree = "<group>"; };
+		53EF4C3927451A9E00E84E56 /* InviteCodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InviteCodeView.swift; sourceTree = "<group>"; };
+		53EF4C3C274520D800E84E56 /* Snackbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snackbar.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		5303FC382743DC7600701663 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		5303FC322743DC7600701663 = {
+			isa = PBXGroup;
+			children = (
+				5303FC3D2743DC7600701663 /* PaperChat */,
+				5303FC3C2743DC7600701663 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		5303FC3C2743DC7600701663 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5303FC3B2743DC7600701663 /* PaperChat.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		5303FC3D2743DC7600701663 /* PaperChat */ = {
+			isa = PBXGroup;
+			children = (
+				53EF4C2F2744D4C700E84E56 /* Screens */,
+				5303FC542743F69F00701663 /* Models */,
+				5303FC4F2743E4DE00701663 /* Extensions */,
+				5303FC4C2743E41000701663 /* ViewModifier */,
+				5303FC3E2743DC7600701663 /* PaperChatApp.swift */,
+				5303FC402743DC7600701663 /* ContentView.swift */,
+				5303FC422743DC7800701663 /* Assets.xcassets */,
+				5303FC442743DC7800701663 /* Preview Content */,
+			);
+			path = PaperChat;
+			sourceTree = "<group>";
+		};
+		5303FC442743DC7800701663 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				5303FC452743DC7800701663 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		5303FC4C2743E41000701663 /* ViewModifier */ = {
+			isa = PBXGroup;
+			children = (
+				5303FC4D2743E42C00701663 /* Button.swift */,
+				5303FC582743FE6500701663 /* FlippedUpsideDown.swift */,
+			);
+			path = ViewModifier;
+			sourceTree = "<group>";
+		};
+		5303FC4F2743E4DE00701663 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				5303FC512743E4FB00701663 /* String */,
+				53EF4C2D2744CF0E00E84E56 /* Color+RGB.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+		5303FC512743E4FB00701663 /* String */ = {
+			isa = PBXGroup;
+			children = (
+				5303FC522743E50700701663 /* Swift+Utils.swift */,
+			);
+			path = String;
+			sourceTree = "<group>";
+		};
+		5303FC542743F69F00701663 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				5303FC552743F6A900701663 /* Structs */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		5303FC552743F6A900701663 /* Structs */ = {
+			isa = PBXGroup;
+			children = (
+				5303FC562743F6B800701663 /* Message.swift */,
+				53EF4C3527450B9700E84E56 /* Room.swift */,
+			);
+			path = Structs;
+			sourceTree = "<group>";
+		};
+		53EF4C2F2744D4C700E84E56 /* Screens */ = {
+			isa = PBXGroup;
+			children = (
+				53EF4C3B274520BE00E84E56 /* Common */,
+				53EF4C302744D4D400E84E56 /* Chat */,
+			);
+			path = Screens;
+			sourceTree = "<group>";
+		};
+		53EF4C302744D4D400E84E56 /* Chat */ = {
+			isa = PBXGroup;
+			children = (
+				53EF4C312744D51900E84E56 /* ChatScreen.swift */,
+				53EF4C332744F34300E84E56 /* ChatMessageView.swift */,
+				53EF4C3727450E1D00E84E56 /* InputBarView.swift */,
+				53EF4C3927451A9E00E84E56 /* InviteCodeView.swift */,
+			);
+			path = Chat;
+			sourceTree = "<group>";
+		};
+		53EF4C3B274520BE00E84E56 /* Common */ = {
+			isa = PBXGroup;
+			children = (
+				53EF4C3C274520D800E84E56 /* Snackbar.swift */,
+			);
+			path = Common;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		5303FC3A2743DC7600701663 /* PaperChat */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5303FC492743DC7800701663 /* Build configuration list for PBXNativeTarget "PaperChat" */;
+			buildPhases = (
+				5303FC372743DC7600701663 /* Sources */,
+				5303FC382743DC7600701663 /* Frameworks */,
+				5303FC392743DC7600701663 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PaperChat;
+			productName = PaperChat;
+			productReference = 5303FC3B2743DC7600701663 /* PaperChat.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		5303FC332743DC7600701663 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1310;
+				LastUpgradeCheck = 1310;
+				TargetAttributes = {
+					5303FC3A2743DC7600701663 = {
+						CreatedOnToolsVersion = 13.1;
+					};
+				};
+			};
+			buildConfigurationList = 5303FC362743DC7600701663 /* Build configuration list for PBXProject "PaperChat" */;
+			compatibilityVersion = "Xcode 13.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 5303FC322743DC7600701663;
+			productRefGroup = 5303FC3C2743DC7600701663 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5303FC3A2743DC7600701663 /* PaperChat */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		5303FC392743DC7600701663 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5303FC462743DC7800701663 /* Preview Assets.xcassets in Resources */,
+				5303FC432743DC7800701663 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		5303FC372743DC7600701663 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				53EF4C342744F34300E84E56 /* ChatMessageView.swift in Sources */,
+				53EF4C3827450E1D00E84E56 /* InputBarView.swift in Sources */,
+				5303FC592743FE6500701663 /* FlippedUpsideDown.swift in Sources */,
+				5303FC412743DC7600701663 /* ContentView.swift in Sources */,
+				53EF4C3D274520D800E84E56 /* Snackbar.swift in Sources */,
+				5303FC532743E50700701663 /* Swift+Utils.swift in Sources */,
+				53EF4C3627450B9700E84E56 /* Room.swift in Sources */,
+				53EF4C322744D51900E84E56 /* ChatScreen.swift in Sources */,
+				5303FC572743F6B800701663 /* Message.swift in Sources */,
+				53EF4C3A27451A9E00E84E56 /* InviteCodeView.swift in Sources */,
+				5303FC4E2743E42C00701663 /* Button.swift in Sources */,
+				5303FC3F2743DC7600701663 /* PaperChatApp.swift in Sources */,
+				53EF4C2E2744CF0E00E84E56 /* Color+RGB.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		5303FC472743DC7800701663 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		5303FC482743DC7800701663 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		5303FC4A2743DC7800701663 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"PaperChat/Preview Content\"";
+				DEVELOPMENT_TEAM = 4XB4MN7FPX;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = vincent.PaperChat;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		5303FC4B2743DC7800701663 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"PaperChat/Preview Content\"";
+				DEVELOPMENT_TEAM = 4XB4MN7FPX;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = vincent.PaperChat;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5303FC362743DC7600701663 /* Build configuration list for PBXProject "PaperChat" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5303FC472743DC7800701663 /* Debug */,
+				5303FC482743DC7800701663 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5303FC492743DC7800701663 /* Build configuration list for PBXNativeTarget "PaperChat" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5303FC4A2743DC7800701663 /* Debug */,
+				5303FC4B2743DC7800701663 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 5303FC332743DC7600701663 /* Project object */;
+}
