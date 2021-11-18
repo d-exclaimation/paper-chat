@@ -1,0 +1,8 @@
+type Room implements Identifiable {
+    id: ID!
+    title: String!
+}
+
+extend type Query {
+    randomRoom: Room!
+}
