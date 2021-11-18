@@ -13,6 +13,8 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/d-exclaimation/paper-chat/config"
+	"github.com/d-exclaimation/paper-chat/db"
 	graph "github.com/d-exclaimation/paper-chat/graphql"
 	"github.com/d-exclaimation/paper-chat/graphql/gql"
 	"github.com/go-chi/chi/v5"
@@ -27,14 +29,23 @@ import (
 func main() {
 	r := chi.NewRouter()
 
+	mongo, err := db.MakeMongo()
+
+	if err != nil {
+		return
+	}
+	defer mongo.Disconnect()
+
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		AllowCredentials: true,
 	}))
 
-	resolver := &graph.Resolver{}
+	resolver := graph.MakeResolver(mongo.Database("paper-chat"))
 
 	srv := handler.New(gql.NewExecutableSchema(gql.Config{
 		Resolvers:  resolver,
@@ -52,12 +63,14 @@ func main() {
 		},
 	})
 
-	srv.Use(extension.Introspection{})
+	if !config.IsProd() {
+		srv.Use(extension.Introspection{})
+		r.Get("/playground", playground.Handler("PaperChat", "/graphql"))
+	}
 
-	r.Get("/playground", playground.Handler("PaperChat", "/graphql"))
 	r.Handle("/graphql", srv)
 
-	if err := http.ListenAndServe(":4000", r); err != nil {
+	if err := http.ListenAndServe(":"+config.Port(), r); err != nil {
 		log.Fatalln(err)
 	}
 }

@@ -11,4 +11,5 @@ type Room implements Identifiable {
 
 extend type Query {
     randomRoom: Room!
+    room(id: ID!): Room
 }

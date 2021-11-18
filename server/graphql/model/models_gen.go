@@ -5,10 +5,3 @@ package model
 type Identifiable interface {
 	IsIdentifiable()
 }
-
-type Room struct {
-	ID    string `json:"id"`
-	Title string `json:"title"`
-}
-
-func (Room) IsIdentifiable() {}

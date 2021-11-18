@@ -38,6 +38,7 @@ type Config struct {
 type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
+	Room() RoomResolver
 }
 
 type DirectiveRoot struct {
@@ -51,6 +52,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Hello      func(childComplexity int) int
 		RandomRoom func(childComplexity int) int
+		Room       func(childComplexity int, id string) int
 	}
 
 	Room struct {
@@ -65,6 +67,10 @@ type MutationResolver interface {
 type QueryResolver interface {
 	Hello(ctx context.Context) (string, error)
 	RandomRoom(ctx context.Context) (*model.Room, error)
+	Room(ctx context.Context, id string) (*model.Room, error)
+}
+type RoomResolver interface {
+	ID(ctx context.Context, obj *model.Room) (string, error)
 }
 
 type executableSchema struct {
@@ -107,6 +113,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.RandomRoom(childComplexity), true
+
+	case "Query.room":
+		if e.complexity.Query.Room == nil {
+			break
+		}
+
+		args, err := ec.field_Query_room_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Room(childComplexity, args["id"].(string)), true
 
 	case "Room.id":
 		if e.complexity.Room.ID == nil {
@@ -186,13 +204,20 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "graphql/room.graphql", Input: `type Room implements Identifiable {
+	{Name: "graphql/room.graphql", Input: `"""
+Room data type describing metadata for a certain chat group
+"""
+type Room implements Identifiable {
+    "Room ID"
     id: ID!
+
+    "Title or Quick description for this Room"
     title: String!
 }
 
 extend type Query {
     randomRoom: Room!
+    room(id: ID!): Room
 }`, BuiltIn: false},
 	{Name: "graphql/schema.graphql", Input: `type Query {
     hello: String!
@@ -210,6 +235,84 @@ schema {
     query: Query
     mutation: Mutation
 }`, BuiltIn: false},
+	{Name: "graphql/user.graphql", Input: `#"""
+#User account for PaperChat
+#"""
+#type User implements Identifiable {
+#    "User ID"
+#    id: ID!
+#
+#    "Unique username for this User"
+#    username: String!
+#}
+#
+#"""
+#User credential result
+#"""
+#type Credentials {
+#    "JWT Access token"
+#    accessToken: String!
+#
+#    "JWT Access token expiration date"
+#    expireAt: String!
+#
+#    "User information"
+#    user: User!
+#}
+#
+#"""
+#Result showing that User information is invalid for a given reason
+#"""
+#type InvalidUser {
+#    "Username that is invalid"
+#    username: String!
+#
+#    "Given reason why it is invalid"
+#    reason: String!
+#}
+#
+#"""
+#Result showing that required credential is invalid
+#"""
+#type InvalidCredential {
+#    "Username attached"
+#    username: String!
+#
+#    "Invalid password"
+#    password: String!
+#}
+#
+#
+#"""
+#SignUp Authentication result
+#"""
+#union SignUp = Credentials | InvalidUser
+#
+#"""
+#LogIn Authentication result
+#"""
+#union LogIn = Credentials | InvalidUser | InvalidCredential
+#
+#extend type Query {
+#    """
+#    Check for the current user authentication logged in in for this client
+#    """
+#    me: User
+#}
+#
+#extend type Mutation {
+#    """
+#    Sign up a new account
+#    """
+#    signup(username: String!, password: String!): SignUp
+#
+#    """
+#    Login an exisiting account
+#    """
+#    login(username: String!, password: String!): SignUp
+#}
+#
+`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -244,6 +347,21 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_room_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -397,6 +515,45 @@ func (ec *executionContext) _Query_randomRoom(ctx context.Context, field graphql
 	return ec.marshalNRoom2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐRoom(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_room(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_room_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Room(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Room)
+	fc.Result = res
+	return ec.marshalORoom2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐRoom(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -479,14 +636,14 @@ func (ec *executionContext) _Room_id(ctx context.Context, field graphql.Collecte
 		Object:     "Room",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
+		return ec.resolvers.Room().ID(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1758,6 +1915,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "room":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_room(ctx, field)
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
@@ -1785,14 +1953,23 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Room")
 		case "id":
-			out.Values[i] = ec._Room_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Room_id(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "title":
 			out.Values[i] = ec._Room_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -2393,6 +2570,13 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	return graphql.MarshalBoolean(*v)
+}
+
+func (ec *executionContext) marshalORoom2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐRoom(ctx context.Context, sel ast.SelectionSet, v *model.Room) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Room(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
