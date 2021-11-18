@@ -1,5 +1,11 @@
+"""
+Room data type describing metadata for a certain chat group
+"""
 type Room implements Identifiable {
+    "Room ID"
     id: ID!
+
+    "Title or Quick description for this Room"
     title: String!
 }
 
