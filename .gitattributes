@@ -1,0 +1,2 @@
+server/graphql/gql/generated.go linguist-language=Go
+*.rb linguist-language=Go
