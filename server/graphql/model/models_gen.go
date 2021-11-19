@@ -2,6 +2,7 @@
 
 package model
 
+// Creating a room outcome
 type CreateResult interface {
 	IsCreateResult()
 }
@@ -10,9 +11,14 @@ type Identifiable interface {
 	IsIdentifiable()
 }
 
-// Join a room possible outcome
+// Joining a room possible outcome
 type JoinResult interface {
 	IsJoinResult()
+}
+
+// Leaving a room possible outcome
+type LeaveResult interface {
+	IsLeaveResult()
 }
 
 // User with the ID and coresponding username already in the room
@@ -25,6 +31,16 @@ type AlreadyJoined struct {
 
 func (AlreadyJoined) IsJoinResult() {}
 
+// User with the ID are not in the room
+type NotAParticipant struct {
+	// User ID Given
+	ID string `json:"id"`
+	// Coresponding Username
+	Username string `json:"username"`
+}
+
+func (NotAParticipant) IsLeaveResult() {}
+
 // No use authentication found
 type NotLoggedIn struct {
 	// Username if exist
@@ -32,6 +48,7 @@ type NotLoggedIn struct {
 }
 
 func (NotLoggedIn) IsJoinResult()   {}
+func (NotLoggedIn) IsLeaveResult()  {}
 func (NotLoggedIn) IsCreateResult() {}
 
 type OperationFailed struct {
@@ -39,6 +56,7 @@ type OperationFailed struct {
 }
 
 func (OperationFailed) IsJoinResult()   {}
+func (OperationFailed) IsLeaveResult()  {}
 func (OperationFailed) IsCreateResult() {}
 
 // Room being lookup doesnt exist based on the ID given
@@ -47,7 +65,8 @@ type RoomDoesntExist struct {
 	ID string `json:"id"`
 }
 
-func (RoomDoesntExist) IsJoinResult() {}
+func (RoomDoesntExist) IsJoinResult()  {}
+func (RoomDoesntExist) IsLeaveResult() {}
 
 // Room related successful result
 type RoomSuccessOperation struct {
@@ -56,4 +75,5 @@ type RoomSuccessOperation struct {
 }
 
 func (RoomSuccessOperation) IsJoinResult()   {}
+func (RoomSuccessOperation) IsLeaveResult()  {}
 func (RoomSuccessOperation) IsCreateResult() {}

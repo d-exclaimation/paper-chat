@@ -5,7 +5,6 @@ package graphql
 
 import (
 	"context"
-
 	"github.com/d-exclaimation/paper-chat/db/rooms"
 	"github.com/d-exclaimation/paper-chat/graphql/gql"
 	"github.com/d-exclaimation/paper-chat/graphql/model"
@@ -21,11 +20,26 @@ func (r *mutationResolver) JoinRoom(ctx context.Context, id string) (model.JoinR
 	if err != nil {
 		return &model.RoomDoesntExist{ID: id}, nil
 	}
+	// TODO: Implement Auth checking
 	user := &model.User{
-		OID: primitive.NewObjectID(),
+		OID:      primitive.NewObjectID(),
 		Username: "Vincent",
 	}
 	return <-rooms.Join(r.db, oid, user, ctx), nil
+}
+
+func (r *mutationResolver) LeaveRoom(ctx context.Context, id string) (model.LeaveResult, error) {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return &model.RoomDoesntExist{ID: id}, nil
+	}
+	uid, _ := primitive.ObjectIDFromHex("6197b8cd6d6b346c58b9eb1c")
+	// TODO: Implement Auth checking
+	user := &model.User{
+		OID:      uid,
+		Username: "Vincent",
+	}
+	return <-rooms.Leave(r.db, oid, user, ctx), nil
 }
 
 func (r *queryResolver) Room(ctx context.Context, id string) (*model.Room, error) {
@@ -37,7 +51,7 @@ func (r *queryResolver) Room(ctx context.Context, id string) (*model.Room, error
 	return <-rooms.GetById(r.db, oid, ctx), nil
 }
 
-func (r *roomResolver) ID(ctx context.Context, obj *model.Room) (string, error) {
+func (r *roomResolver) ID(_ context.Context, obj *model.Room) (string, error) {
 	return obj.OID.Hex(), nil
 }
 

@@ -30,12 +30,20 @@ extend type Mutation {
     Join a room
     """
     joinRoom(id: ID!): JoinResult!
+
+    """
+    Leave a room
+    """
+    leaveRoom(id: ID!): LeaveResult!
 }
 
 # -- Union types --
 
-"Join a room possible outcome"
+"Joining a room possible outcome"
 union JoinResult = RoomSuccessOperation | AlreadyJoined | RoomDoesntExist | OperationFailed | NotLoggedIn
+
+"Leaving a room possible outcome"
+union LeaveResult = RoomSuccessOperation | NotAParticipant | RoomDoesntExist | OperationFailed | NotLoggedIn
 
 "Creating a room outcome"
 union CreateResult = RoomSuccessOperation | OperationFailed | NotLoggedIn
@@ -50,6 +58,7 @@ type RoomSuccessOperation {
 
 "User with the ID and coresponding username already in the room"
 type AlreadyJoined {
+    # TODO: Use User instead when auth was implemented
     "User ID Given"
     id: ID!
     "Coresponding Username"
@@ -60,4 +69,13 @@ type AlreadyJoined {
 type RoomDoesntExist {
     "ID Given"
     id: ID!
+}
+
+"User with the ID are not in the room"
+type NotAParticipant {
+    # TODO: Use User instead when auth was implemented
+    "User ID Given"
+    id: ID!
+    "Coresponding Username"
+    username: String!
 }

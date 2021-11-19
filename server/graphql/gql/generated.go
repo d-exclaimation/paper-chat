@@ -54,6 +54,12 @@ type ComplexityRoot struct {
 		CreateRoom func(childComplexity int, title string) int
 		Hello      func(childComplexity int, msg string) int
 		JoinRoom   func(childComplexity int, id string) int
+		LeaveRoom  func(childComplexity int, id string) int
+	}
+
+	NotAParticipant struct {
+		ID       func(childComplexity int) int
+		Username func(childComplexity int) int
 	}
 
 	NotLoggedIn struct {
@@ -87,6 +93,7 @@ type MutationResolver interface {
 	Hello(ctx context.Context, msg string) (string, error)
 	CreateRoom(ctx context.Context, title string) (model.CreateResult, error)
 	JoinRoom(ctx context.Context, id string) (model.JoinResult, error)
+	LeaveRoom(ctx context.Context, id string) (model.LeaveResult, error)
 }
 type QueryResolver interface {
 	Hello(ctx context.Context) (string, error)
@@ -160,6 +167,32 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.JoinRoom(childComplexity, args["id"].(string)), true
+
+	case "Mutation.leaveRoom":
+		if e.complexity.Mutation.LeaveRoom == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_leaveRoom_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.LeaveRoom(childComplexity, args["id"].(string)), true
+
+	case "NotAParticipant.id":
+		if e.complexity.NotAParticipant.ID == nil {
+			break
+		}
+
+		return e.complexity.NotAParticipant.ID(childComplexity), true
+
+	case "NotAParticipant.username":
+		if e.complexity.NotAParticipant.Username == nil {
+			break
+		}
+
+		return e.complexity.NotAParticipant.Username(childComplexity), true
 
 	case "NotLoggedIn.username":
 		if e.complexity.NotLoggedIn.Username == nil {
@@ -318,13 +351,22 @@ extend type Mutation {
     Join a room
     """
     joinRoom(id: ID!): JoinResult!
+
+    """
+    Leave a room
+    """
+    leaveRoom(id: ID!): LeaveResult!
 }
 
 # -- Union types --
 
-"Join a room possible outcome"
+"Joining a room possible outcome"
 union JoinResult = RoomSuccessOperation | AlreadyJoined | RoomDoesntExist | OperationFailed | NotLoggedIn
 
+"Leaving a room possible outcome"
+union LeaveResult = RoomSuccessOperation | NotAParticipant | RoomDoesntExist | OperationFailed | NotLoggedIn
+
+"Creating a room outcome"
 union CreateResult = RoomSuccessOperation | OperationFailed | NotLoggedIn
 
 # -- Utility types --
@@ -337,6 +379,7 @@ type RoomSuccessOperation {
 
 "User with the ID and coresponding username already in the room"
 type AlreadyJoined {
+    # TODO: Use User instead when auth was implemented
     "User ID Given"
     id: ID!
     "Coresponding Username"
@@ -347,6 +390,15 @@ type AlreadyJoined {
 type RoomDoesntExist {
     "ID Given"
     id: ID!
+}
+
+"User with the ID are not in the room"
+type NotAParticipant {
+    # TODO: Use User instead when auth was implemented
+    "User ID Given"
+    id: ID!
+    "Coresponding Username"
+    username: String!
 }`, BuiltIn: false},
 	{Name: "graphql/schema.graphql", Input: `type Query {
     hello: String!
@@ -491,6 +543,21 @@ func (ec *executionContext) field_Mutation_hello_args(ctx context.Context, rawAr
 }
 
 func (ec *executionContext) field_Mutation_joinRoom_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_leaveRoom_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -767,6 +834,118 @@ func (ec *executionContext) _Mutation_joinRoom(ctx context.Context, field graphq
 	res := resTmp.(model.JoinResult)
 	fc.Result = res
 	return ec.marshalNJoinResult2githubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐJoinResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_leaveRoom(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_leaveRoom_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().LeaveRoom(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.LeaveResult)
+	fc.Result = res
+	return ec.marshalNLeaveResult2githubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐLeaveResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NotAParticipant_id(ctx context.Context, field graphql.CollectedField, obj *model.NotAParticipant) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NotAParticipant",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NotAParticipant_username(ctx context.Context, field graphql.CollectedField, obj *model.NotAParticipant) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NotAParticipant",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Username, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NotLoggedIn_username(ctx context.Context, field graphql.CollectedField, obj *model.NotLoggedIn) (ret graphql.Marshaler) {
@@ -2337,6 +2516,50 @@ func (ec *executionContext) _JoinResult(ctx context.Context, sel ast.SelectionSe
 	}
 }
 
+func (ec *executionContext) _LeaveResult(ctx context.Context, sel ast.SelectionSet, obj model.LeaveResult) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.RoomSuccessOperation:
+		return ec._RoomSuccessOperation(ctx, sel, &obj)
+	case *model.RoomSuccessOperation:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._RoomSuccessOperation(ctx, sel, obj)
+	case model.NotAParticipant:
+		return ec._NotAParticipant(ctx, sel, &obj)
+	case *model.NotAParticipant:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._NotAParticipant(ctx, sel, obj)
+	case model.RoomDoesntExist:
+		return ec._RoomDoesntExist(ctx, sel, &obj)
+	case *model.RoomDoesntExist:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._RoomDoesntExist(ctx, sel, obj)
+	case model.OperationFailed:
+		return ec._OperationFailed(ctx, sel, &obj)
+	case *model.OperationFailed:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._OperationFailed(ctx, sel, obj)
+	case model.NotLoggedIn:
+		return ec._NotLoggedIn(ctx, sel, &obj)
+	case *model.NotLoggedIn:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._NotLoggedIn(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
@@ -2403,6 +2626,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "leaveRoom":
+			out.Values[i] = ec._Mutation_leaveRoom(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2414,7 +2642,39 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	return out
 }
 
-var notLoggedInImplementors = []string{"NotLoggedIn", "JoinResult", "CreateResult"}
+var notAParticipantImplementors = []string{"NotAParticipant", "LeaveResult"}
+
+func (ec *executionContext) _NotAParticipant(ctx context.Context, sel ast.SelectionSet, obj *model.NotAParticipant) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, notAParticipantImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NotAParticipant")
+		case "id":
+			out.Values[i] = ec._NotAParticipant_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "username":
+			out.Values[i] = ec._NotAParticipant_username(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var notLoggedInImplementors = []string{"NotLoggedIn", "JoinResult", "LeaveResult", "CreateResult"}
 
 func (ec *executionContext) _NotLoggedIn(ctx context.Context, sel ast.SelectionSet, obj *model.NotLoggedIn) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, notLoggedInImplementors)
@@ -2438,7 +2698,7 @@ func (ec *executionContext) _NotLoggedIn(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
-var operationFailedImplementors = []string{"OperationFailed", "JoinResult", "CreateResult"}
+var operationFailedImplementors = []string{"OperationFailed", "JoinResult", "LeaveResult", "CreateResult"}
 
 func (ec *executionContext) _OperationFailed(ctx context.Context, sel ast.SelectionSet, obj *model.OperationFailed) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, operationFailedImplementors)
@@ -2561,7 +2821,7 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 	return out
 }
 
-var roomDoesntExistImplementors = []string{"RoomDoesntExist", "JoinResult"}
+var roomDoesntExistImplementors = []string{"RoomDoesntExist", "JoinResult", "LeaveResult"}
 
 func (ec *executionContext) _RoomDoesntExist(ctx context.Context, sel ast.SelectionSet, obj *model.RoomDoesntExist) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, roomDoesntExistImplementors)
@@ -2588,7 +2848,7 @@ func (ec *executionContext) _RoomDoesntExist(ctx context.Context, sel ast.Select
 	return out
 }
 
-var roomSuccessOperationImplementors = []string{"RoomSuccessOperation", "JoinResult", "CreateResult"}
+var roomSuccessOperationImplementors = []string{"RoomSuccessOperation", "JoinResult", "LeaveResult", "CreateResult"}
 
 func (ec *executionContext) _RoomSuccessOperation(ctx context.Context, sel ast.SelectionSet, obj *model.RoomSuccessOperation) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, roomSuccessOperationImplementors)
@@ -2913,6 +3173,16 @@ func (ec *executionContext) marshalNJoinResult2githubᚗcomᚋdᚑexclaimation�
 		return graphql.Null
 	}
 	return ec._JoinResult(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLeaveResult2githubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐLeaveResult(ctx context.Context, sel ast.SelectionSet, v model.LeaveResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._LeaveResult(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNRoom2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐRoom(ctx context.Context, sel ast.SelectionSet, v *model.Room) graphql.Marshaler {
