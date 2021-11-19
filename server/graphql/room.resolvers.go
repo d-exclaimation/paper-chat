@@ -5,25 +5,27 @@ package graphql
 
 import (
 	"context"
+
 	"github.com/d-exclaimation/paper-chat/db/rooms"
 	"github.com/d-exclaimation/paper-chat/graphql/gql"
 	"github.com/d-exclaimation/paper-chat/graphql/model"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (r *mutationResolver) CreateRoom(ctx context.Context, title string) (*model.Room, error) {
-	result := <-rooms.New(r.db, title, ctx)
-	return result.Room, result.Error
+func (r *mutationResolver) CreateRoom(ctx context.Context, title string) (model.CreateResult, error) {
+	return <-rooms.New(r.db, title, ctx), nil
 }
 
-func (r *mutationResolver) JoinRoom(ctx context.Context, id string) (*model.Room, error) {
+func (r *mutationResolver) JoinRoom(ctx context.Context, id string) (model.JoinResult, error) {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, nil
+		return &model.RoomDoesntExist{ID: id}, nil
 	}
-	user := &model.User{OID: primitive.NewObjectID(), Username: "Vincent"}
-	res := <-rooms.Join(r.db, oid, user, ctx)
-	return res.Room, res.Error
+	user := &model.User{
+		OID: primitive.NewObjectID(),
+		Username: "Vincent",
+	}
+	return <-rooms.Join(r.db, oid, user, ctx), nil
 }
 
 func (r *queryResolver) Room(ctx context.Context, id string) (*model.Room, error) {

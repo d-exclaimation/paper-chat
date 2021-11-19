@@ -75,3 +75,11 @@
 #    login(username: String!, password: String!): SignUp
 #}
 #
+
+## -- Utility types --
+
+"No use authentication found"
+type NotLoggedIn {
+    "Username if exist"
+    username: String
+}

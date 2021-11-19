@@ -1,3 +1,5 @@
+# -- Base object types --
+
 """
 Room data type describing metadata for a certain chat group
 """
@@ -8,6 +10,8 @@ type Room implements Identifiable {
     "Title or Quick description for this Room"
     title: String!
 }
+
+# -- Extend Query, Mutation, or Subscription --
 
 extend type Query {
     """
@@ -20,10 +24,40 @@ extend type Mutation {
     """
     Create a new room
     """
-    createRoom(title: String!): Room!
+    createRoom(title: String!): CreateResult!
 
     """
     Join a room
     """
-    joinRoom(id: ID!): Room!
+    joinRoom(id: ID!): JoinResult!
+}
+
+# -- Union types --
+
+"Join a room possible outcome"
+union JoinResult = RoomSuccessOperation | AlreadyJoined | RoomDoesntExist | OperationFailed | NotLoggedIn
+
+"Creating a room outcome"
+union CreateResult = RoomSuccessOperation | OperationFailed | NotLoggedIn
+
+# -- Utility types --
+
+"Room related successful result"
+type RoomSuccessOperation {
+    "Successful payload"
+    payload: Room!
+}
+
+"User with the ID and coresponding username already in the room"
+type AlreadyJoined {
+    "User ID Given"
+    id: ID!
+    "Coresponding Username"
+    username: String!
+}
+
+"Room being lookup doesnt exist based on the ID given"
+type RoomDoesntExist {
+    "ID Given"
+    id: ID!
 }

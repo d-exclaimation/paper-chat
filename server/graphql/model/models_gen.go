@@ -2,6 +2,58 @@
 
 package model
 
+type CreateResult interface {
+	IsCreateResult()
+}
+
 type Identifiable interface {
 	IsIdentifiable()
 }
+
+// Join a room possible outcome
+type JoinResult interface {
+	IsJoinResult()
+}
+
+// User with the ID and coresponding username already in the room
+type AlreadyJoined struct {
+	// User ID Given
+	ID string `json:"id"`
+	// Coresponding Username
+	Username string `json:"username"`
+}
+
+func (AlreadyJoined) IsJoinResult() {}
+
+// No use authentication found
+type NotLoggedIn struct {
+	// Username if exist
+	Username *string `json:"username"`
+}
+
+func (NotLoggedIn) IsJoinResult()   {}
+func (NotLoggedIn) IsCreateResult() {}
+
+type OperationFailed struct {
+	Reason string `json:"reason"`
+}
+
+func (OperationFailed) IsJoinResult()   {}
+func (OperationFailed) IsCreateResult() {}
+
+// Room being lookup doesnt exist based on the ID given
+type RoomDoesntExist struct {
+	// ID Given
+	ID string `json:"id"`
+}
+
+func (RoomDoesntExist) IsJoinResult() {}
+
+// Room related successful result
+type RoomSuccessOperation struct {
+	// Successful payload
+	Payload *Room `json:"payload"`
+}
+
+func (RoomSuccessOperation) IsJoinResult()   {}
+func (RoomSuccessOperation) IsCreateResult() {}

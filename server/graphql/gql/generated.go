@@ -45,10 +45,23 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	AlreadyJoined struct {
+		ID       func(childComplexity int) int
+		Username func(childComplexity int) int
+	}
+
 	Mutation struct {
 		CreateRoom func(childComplexity int, title string) int
 		Hello      func(childComplexity int, msg string) int
 		JoinRoom   func(childComplexity int, id string) int
+	}
+
+	NotLoggedIn struct {
+		Username func(childComplexity int) int
+	}
+
+	OperationFailed struct {
+		Reason func(childComplexity int) int
 	}
 
 	Query struct {
@@ -60,12 +73,20 @@ type ComplexityRoot struct {
 		ID    func(childComplexity int) int
 		Title func(childComplexity int) int
 	}
+
+	RoomDoesntExist struct {
+		ID func(childComplexity int) int
+	}
+
+	RoomSuccessOperation struct {
+		Payload func(childComplexity int) int
+	}
 }
 
 type MutationResolver interface {
 	Hello(ctx context.Context, msg string) (string, error)
-	CreateRoom(ctx context.Context, title string) (*model.Room, error)
-	JoinRoom(ctx context.Context, id string) (*model.Room, error)
+	CreateRoom(ctx context.Context, title string) (model.CreateResult, error)
+	JoinRoom(ctx context.Context, id string) (model.JoinResult, error)
 }
 type QueryResolver interface {
 	Hello(ctx context.Context) (string, error)
@@ -89,6 +110,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "AlreadyJoined.id":
+		if e.complexity.AlreadyJoined.ID == nil {
+			break
+		}
+
+		return e.complexity.AlreadyJoined.ID(childComplexity), true
+
+	case "AlreadyJoined.username":
+		if e.complexity.AlreadyJoined.Username == nil {
+			break
+		}
+
+		return e.complexity.AlreadyJoined.Username(childComplexity), true
 
 	case "Mutation.createRoom":
 		if e.complexity.Mutation.CreateRoom == nil {
@@ -126,6 +161,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.JoinRoom(childComplexity, args["id"].(string)), true
 
+	case "NotLoggedIn.username":
+		if e.complexity.NotLoggedIn.Username == nil {
+			break
+		}
+
+		return e.complexity.NotLoggedIn.Username(childComplexity), true
+
+	case "OperationFailed.reason":
+		if e.complexity.OperationFailed.Reason == nil {
+			break
+		}
+
+		return e.complexity.OperationFailed.Reason(childComplexity), true
+
 	case "Query.hello":
 		if e.complexity.Query.Hello == nil {
 			break
@@ -158,6 +207,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Room.Title(childComplexity), true
+
+	case "RoomDoesntExist.id":
+		if e.complexity.RoomDoesntExist.ID == nil {
+			break
+		}
+
+		return e.complexity.RoomDoesntExist.ID(childComplexity), true
+
+	case "RoomSuccessOperation.payload":
+		if e.complexity.RoomSuccessOperation.Payload == nil {
+			break
+		}
+
+		return e.complexity.RoomSuccessOperation.Payload(childComplexity), true
 
 	}
 	return 0, false
@@ -223,7 +286,9 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "graphql/room.graphql", Input: `"""
+	{Name: "graphql/room.graphql", Input: `# -- Base object types --
+
+"""
 Room data type describing metadata for a certain chat group
 """
 type Room implements Identifiable {
@@ -233,6 +298,8 @@ type Room implements Identifiable {
     "Title or Quick description for this Room"
     title: String!
 }
+
+# -- Extend Query, Mutation, or Subscription --
 
 extend type Query {
     """
@@ -245,12 +312,41 @@ extend type Mutation {
     """
     Create a new room
     """
-    createRoom(title: String!): Room!
+    createRoom(title: String!): CreateResult!
 
     """
     Join a room
     """
-    joinRoom(id: ID!): Room!
+    joinRoom(id: ID!): JoinResult!
+}
+
+# -- Union types --
+
+"Join a room possible outcome"
+union JoinResult = RoomSuccessOperation | AlreadyJoined | RoomDoesntExist | OperationFailed | NotLoggedIn
+
+union CreateResult = RoomSuccessOperation | OperationFailed | NotLoggedIn
+
+# -- Utility types --
+
+"Room related successful result"
+type RoomSuccessOperation {
+    "Successful payload"
+    payload: Room!
+}
+
+"User with the ID and coresponding username already in the room"
+type AlreadyJoined {
+    "User ID Given"
+    id: ID!
+    "Coresponding Username"
+    username: String!
+}
+
+"Room being lookup doesnt exist based on the ID given"
+type RoomDoesntExist {
+    "ID Given"
+    id: ID!
 }`, BuiltIn: false},
 	{Name: "graphql/schema.graphql", Input: `type Query {
     hello: String!
@@ -262,6 +358,10 @@ type Mutation {
 
 interface Identifiable {
   id: ID!
+}
+
+type OperationFailed {
+    reason: String!
 }
 
 schema {
@@ -345,7 +445,14 @@ schema {
 #    login(username: String!, password: String!): SignUp
 #}
 #
-`, BuiltIn: false},
+
+## -- Utility types --
+
+"No use authentication found"
+type NotLoggedIn {
+    "Username if exist"
+    username: String
+}`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -466,6 +573,76 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
+func (ec *executionContext) _AlreadyJoined_id(ctx context.Context, field graphql.CollectedField, obj *model.AlreadyJoined) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AlreadyJoined",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AlreadyJoined_username(ctx context.Context, field graphql.CollectedField, obj *model.AlreadyJoined) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "AlreadyJoined",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Username, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_hello(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -545,9 +722,9 @@ func (ec *executionContext) _Mutation_createRoom(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Room)
+	res := resTmp.(model.CreateResult)
 	fc.Result = res
-	return ec.marshalNRoom2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐRoom(ctx, field.Selections, res)
+	return ec.marshalNCreateResult2githubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐCreateResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_joinRoom(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -587,9 +764,76 @@ func (ec *executionContext) _Mutation_joinRoom(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Room)
+	res := resTmp.(model.JoinResult)
 	fc.Result = res
-	return ec.marshalNRoom2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐRoom(ctx, field.Selections, res)
+	return ec.marshalNJoinResult2githubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐJoinResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NotLoggedIn_username(ctx context.Context, field graphql.CollectedField, obj *model.NotLoggedIn) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NotLoggedIn",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Username, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OperationFailed_reason(ctx context.Context, field graphql.CollectedField, obj *model.OperationFailed) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "OperationFailed",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reason, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_hello(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -805,6 +1049,76 @@ func (ec *executionContext) _Room_title(ctx context.Context, field graphql.Colle
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RoomDoesntExist_id(ctx context.Context, field graphql.CollectedField, obj *model.RoomDoesntExist) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RoomDoesntExist",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RoomSuccessOperation_payload(ctx context.Context, field graphql.CollectedField, obj *model.RoomSuccessOperation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RoomSuccessOperation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Payload, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Room)
+	fc.Result = res
+	return ec.marshalNRoom2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐRoom(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -1933,6 +2247,36 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    ************************** interface.gotpl ***************************
 
+func (ec *executionContext) _CreateResult(ctx context.Context, sel ast.SelectionSet, obj model.CreateResult) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.RoomSuccessOperation:
+		return ec._RoomSuccessOperation(ctx, sel, &obj)
+	case *model.RoomSuccessOperation:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._RoomSuccessOperation(ctx, sel, obj)
+	case model.OperationFailed:
+		return ec._OperationFailed(ctx, sel, &obj)
+	case *model.OperationFailed:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._OperationFailed(ctx, sel, obj)
+	case model.NotLoggedIn:
+		return ec._NotLoggedIn(ctx, sel, &obj)
+	case *model.NotLoggedIn:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._NotLoggedIn(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 func (ec *executionContext) _Identifiable(ctx context.Context, sel ast.SelectionSet, obj model.Identifiable) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
@@ -1949,9 +2293,85 @@ func (ec *executionContext) _Identifiable(ctx context.Context, sel ast.Selection
 	}
 }
 
+func (ec *executionContext) _JoinResult(ctx context.Context, sel ast.SelectionSet, obj model.JoinResult) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.RoomSuccessOperation:
+		return ec._RoomSuccessOperation(ctx, sel, &obj)
+	case *model.RoomSuccessOperation:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._RoomSuccessOperation(ctx, sel, obj)
+	case model.AlreadyJoined:
+		return ec._AlreadyJoined(ctx, sel, &obj)
+	case *model.AlreadyJoined:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._AlreadyJoined(ctx, sel, obj)
+	case model.RoomDoesntExist:
+		return ec._RoomDoesntExist(ctx, sel, &obj)
+	case *model.RoomDoesntExist:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._RoomDoesntExist(ctx, sel, obj)
+	case model.OperationFailed:
+		return ec._OperationFailed(ctx, sel, &obj)
+	case *model.OperationFailed:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._OperationFailed(ctx, sel, obj)
+	case model.NotLoggedIn:
+		return ec._NotLoggedIn(ctx, sel, &obj)
+	case *model.NotLoggedIn:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._NotLoggedIn(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var alreadyJoinedImplementors = []string{"AlreadyJoined", "JoinResult"}
+
+func (ec *executionContext) _AlreadyJoined(ctx context.Context, sel ast.SelectionSet, obj *model.AlreadyJoined) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, alreadyJoinedImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AlreadyJoined")
+		case "id":
+			out.Values[i] = ec._AlreadyJoined_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "username":
+			out.Values[i] = ec._AlreadyJoined_username(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
 
 var mutationImplementors = []string{"Mutation"}
 
@@ -1980,6 +2400,57 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "joinRoom":
 			out.Values[i] = ec._Mutation_joinRoom(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var notLoggedInImplementors = []string{"NotLoggedIn", "JoinResult", "CreateResult"}
+
+func (ec *executionContext) _NotLoggedIn(ctx context.Context, sel ast.SelectionSet, obj *model.NotLoggedIn) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, notLoggedInImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NotLoggedIn")
+		case "username":
+			out.Values[i] = ec._NotLoggedIn_username(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var operationFailedImplementors = []string{"OperationFailed", "JoinResult", "CreateResult"}
+
+func (ec *executionContext) _OperationFailed(ctx context.Context, sel ast.SelectionSet, obj *model.OperationFailed) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, operationFailedImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OperationFailed")
+		case "reason":
+			out.Values[i] = ec._OperationFailed_reason(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2078,6 +2549,60 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._Room_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var roomDoesntExistImplementors = []string{"RoomDoesntExist", "JoinResult"}
+
+func (ec *executionContext) _RoomDoesntExist(ctx context.Context, sel ast.SelectionSet, obj *model.RoomDoesntExist) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, roomDoesntExistImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RoomDoesntExist")
+		case "id":
+			out.Values[i] = ec._RoomDoesntExist_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var roomSuccessOperationImplementors = []string{"RoomSuccessOperation", "JoinResult", "CreateResult"}
+
+func (ec *executionContext) _RoomSuccessOperation(ctx context.Context, sel ast.SelectionSet, obj *model.RoomSuccessOperation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, roomSuccessOperationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RoomSuccessOperation")
+		case "payload":
+			out.Values[i] = ec._RoomSuccessOperation_payload(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -2355,6 +2880,16 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) marshalNCreateResult2githubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐCreateResult(ctx context.Context, sel ast.SelectionSet, v model.CreateResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._CreateResult(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalID(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -2370,8 +2905,14 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
-func (ec *executionContext) marshalNRoom2githubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐRoom(ctx context.Context, sel ast.SelectionSet, v model.Room) graphql.Marshaler {
-	return ec._Room(ctx, sel, &v)
+func (ec *executionContext) marshalNJoinResult2githubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐJoinResult(ctx context.Context, sel ast.SelectionSet, v model.JoinResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._JoinResult(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNRoom2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐRoom(ctx context.Context, sel ast.SelectionSet, v *model.Room) graphql.Marshaler {
