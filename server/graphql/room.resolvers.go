@@ -5,41 +5,34 @@ package graphql
 
 import (
 	"context"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-
+	"github.com/d-exclaimation/paper-chat/db/rooms"
 	"github.com/d-exclaimation/paper-chat/graphql/gql"
 	"github.com/d-exclaimation/paper-chat/graphql/model"
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (r *queryResolver) RandomRoom(ctx context.Context) (*model.Room, error) {
-	var (
-		room model.Room
-		doc  = r.db.Collection("rooms").FindOne(ctx, bson.M{})
-	)
-	if err := doc.Decode(&room); err != nil {
-		return nil, err
+func (r *mutationResolver) CreateRoom(ctx context.Context, title string) (*model.Room, error) {
+	result := <-rooms.New(r.db, title, ctx)
+	return result.Room, result.Error
+}
+
+func (r *mutationResolver) JoinRoom(ctx context.Context, id string) (*model.Room, error) {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, nil
 	}
-	return &room, nil
+	user := &model.User{OID: primitive.NewObjectID(), Username: "Vincent"}
+	res := <-rooms.Join(r.db, oid, user, ctx)
+	return res.Room, res.Error
 }
 
 func (r *queryResolver) Room(ctx context.Context, id string) (*model.Room, error) {
-	if !primitive.IsValidObjectID(id) {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
 		return nil, nil
 	}
 
-	var (
-		room model.Room
-		oid, _ = primitive.ObjectIDFromHex(id)
-		query  = bson.M{
-			"_id": oid,
-		}
-		doc = r.db.Collection("rooms").FindOne(ctx, query)
-	)
-	if err := doc.Decode(&room); err != nil {
-		return nil, err
-	}
-	return &room, nil
+	return <-rooms.GetById(r.db, oid, ctx), nil
 }
 
 func (r *roomResolver) ID(ctx context.Context, obj *model.Room) (string, error) {

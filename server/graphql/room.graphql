@@ -10,6 +10,20 @@ type Room implements Identifiable {
 }
 
 extend type Query {
-    randomRoom: Room!
+    """
+    Get a information about a Room if any
+    """
     room(id: ID!): Room
+}
+
+extend type Mutation {
+    """
+    Create a new room
+    """
+    createRoom(title: String!): Room!
+
+    """
+    Join a room
+    """
+    joinRoom(id: ID!): Room!
 }

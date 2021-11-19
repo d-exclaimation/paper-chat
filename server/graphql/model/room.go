@@ -16,6 +16,8 @@ type Room struct {
 	OID primitive.ObjectID `bson:"_id"`
 	// Title or Quick description for this Room
 	Title string `bson:"title" json:"title"`
+	// Participant of this Room
+	Participant []*User `bson:"participant"`
 }
 
 func (Room) IsIdentifiable() {}

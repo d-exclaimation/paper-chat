@@ -46,13 +46,14 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		Hello func(childComplexity int, msg string) int
+		CreateRoom func(childComplexity int, title string) int
+		Hello      func(childComplexity int, msg string) int
+		JoinRoom   func(childComplexity int, id string) int
 	}
 
 	Query struct {
-		Hello      func(childComplexity int) int
-		RandomRoom func(childComplexity int) int
-		Room       func(childComplexity int, id string) int
+		Hello func(childComplexity int) int
+		Room  func(childComplexity int, id string) int
 	}
 
 	Room struct {
@@ -63,10 +64,11 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	Hello(ctx context.Context, msg string) (string, error)
+	CreateRoom(ctx context.Context, title string) (*model.Room, error)
+	JoinRoom(ctx context.Context, id string) (*model.Room, error)
 }
 type QueryResolver interface {
 	Hello(ctx context.Context) (string, error)
-	RandomRoom(ctx context.Context) (*model.Room, error)
 	Room(ctx context.Context, id string) (*model.Room, error)
 }
 type RoomResolver interface {
@@ -88,6 +90,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
+	case "Mutation.createRoom":
+		if e.complexity.Mutation.CreateRoom == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createRoom_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateRoom(childComplexity, args["title"].(string)), true
+
 	case "Mutation.hello":
 		if e.complexity.Mutation.Hello == nil {
 			break
@@ -100,19 +114,24 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Hello(childComplexity, args["msg"].(string)), true
 
+	case "Mutation.joinRoom":
+		if e.complexity.Mutation.JoinRoom == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_joinRoom_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.JoinRoom(childComplexity, args["id"].(string)), true
+
 	case "Query.hello":
 		if e.complexity.Query.Hello == nil {
 			break
 		}
 
 		return e.complexity.Query.Hello(childComplexity), true
-
-	case "Query.randomRoom":
-		if e.complexity.Query.RandomRoom == nil {
-			break
-		}
-
-		return e.complexity.Query.RandomRoom(childComplexity), true
 
 	case "Query.room":
 		if e.complexity.Query.Room == nil {
@@ -216,8 +235,22 @@ type Room implements Identifiable {
 }
 
 extend type Query {
-    randomRoom: Room!
+    """
+    Get a information about a Room if any
+    """
     room(id: ID!): Room
+}
+
+extend type Mutation {
+    """
+    Create a new room
+    """
+    createRoom(title: String!): Room!
+
+    """
+    Join a room
+    """
+    joinRoom(id: ID!): Room!
 }`, BuiltIn: false},
 	{Name: "graphql/schema.graphql", Input: `type Query {
     hello: String!
@@ -320,6 +353,21 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
+func (ec *executionContext) field_Mutation_createRoom_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["title"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["title"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_hello_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -332,6 +380,21 @@ func (ec *executionContext) field_Mutation_hello_args(ctx context.Context, rawAr
 		}
 	}
 	args["msg"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_joinRoom_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -445,6 +508,90 @@ func (ec *executionContext) _Mutation_hello(ctx context.Context, field graphql.C
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_createRoom(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_createRoom_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateRoom(rctx, args["title"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Room)
+	fc.Result = res
+	return ec.marshalNRoom2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐRoom(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_joinRoom(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_joinRoom_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().JoinRoom(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Room)
+	fc.Result = res
+	return ec.marshalNRoom2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐRoom(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_hello(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -478,41 +625,6 @@ func (ec *executionContext) _Query_hello(ctx context.Context, field graphql.Coll
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_randomRoom(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().RandomRoom(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.Room)
-	fc.Result = res
-	return ec.marshalNRoom2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐRoom(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_room(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1861,6 +1973,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "createRoom":
+			out.Values[i] = ec._Mutation_createRoom(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "joinRoom":
+			out.Values[i] = ec._Mutation_joinRoom(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -1896,20 +2018,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_hello(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "randomRoom":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_randomRoom(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
