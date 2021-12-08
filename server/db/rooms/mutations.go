@@ -14,7 +14,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"log"
 )
 
 type RoomResult struct {
@@ -50,7 +49,6 @@ func New(db *mongo.Database, title string, ctx context.Context) <-chan model.Cre
 }
 
 func Join(db *mongo.Database, oid primitive.ObjectID, user *model.User, ctx context.Context) <-chan model.JoinResult {
-	log.Printf("oid: %s", oid.Hex())
 	task := make(chan model.JoinResult)
 	go func() {
 		var (
@@ -58,7 +56,6 @@ func Join(db *mongo.Database, oid primitive.ObjectID, user *model.User, ctx cont
 			initial = <-GetById(db, oid, ctx)
 		)
 
-		log.Printf("result oid: %s", initial.OID.Hex())
 		if initial == nil {
 			task <- &model.RoomDoesntExist{ID: oid.Hex()}
 			close(task)

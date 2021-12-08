@@ -5,7 +5,9 @@ package graphql
 
 import (
 	"context"
+
 	"github.com/d-exclaimation/paper-chat/db/rooms"
+	"github.com/d-exclaimation/paper-chat/graphql/auth"
 	"github.com/d-exclaimation/paper-chat/graphql/gql"
 	"github.com/d-exclaimation/paper-chat/graphql/model"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -20,10 +22,9 @@ func (r *mutationResolver) JoinRoom(ctx context.Context, id string) (model.JoinR
 	if err != nil {
 		return &model.RoomDoesntExist{ID: id}, nil
 	}
-	// TODO: Implement Auth checking
-	user := &model.User{
-		OID:      primitive.NewObjectID(),
-		Username: "Vincent",
+	user := <-auth.Auth(r.db, ctx)
+	if user == nil {
+		return model.NotLoggedIn{Username: nil}, nil
 	}
 	return <-rooms.Join(r.db, oid, user, ctx), nil
 }
@@ -33,11 +34,9 @@ func (r *mutationResolver) LeaveRoom(ctx context.Context, id string) (model.Leav
 	if err != nil {
 		return &model.RoomDoesntExist{ID: id}, nil
 	}
-	uid, _ := primitive.ObjectIDFromHex("6197b8cd6d6b346c58b9eb1c")
-	// TODO: Implement Auth checking
-	user := &model.User{
-		OID:      uid,
-		Username: "Vincent",
+	user := <-auth.Auth(r.db, ctx)
+	if user == nil {
+		return model.NotLoggedIn{Username: nil}, nil
 	}
 	return <-rooms.Leave(r.db, oid, user, ctx), nil
 }
@@ -51,7 +50,7 @@ func (r *queryResolver) Room(ctx context.Context, id string) (*model.Room, error
 	return <-rooms.GetById(r.db, oid, ctx), nil
 }
 
-func (r *roomResolver) ID(_ context.Context, obj *model.Room) (string, error) {
+func (r *roomResolver) ID(ctx context.Context, obj *model.Room) (string, error) {
 	return obj.OID.Hex(), nil
 }
 

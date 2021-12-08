@@ -21,6 +21,16 @@ type LeaveResult interface {
 	IsLeaveResult()
 }
 
+// LogIn Authentication result
+type LogIn interface {
+	IsLogIn()
+}
+
+// SignUp Authentication result
+type SignUp interface {
+	IsSignUp()
+}
+
 // User with the ID and coresponding username already in the room
 type AlreadyJoined struct {
 	// User ID Given
@@ -30,6 +40,30 @@ type AlreadyJoined struct {
 }
 
 func (AlreadyJoined) IsJoinResult() {}
+
+// User credential result
+type Credentials struct {
+	// JWT Access token
+	AccessToken string `json:"accessToken"`
+	// JWT Access token expiration date
+	ExpireAt string `json:"expireAt"`
+	// User information
+	User *User `json:"user"`
+}
+
+func (Credentials) IsSignUp() {}
+func (Credentials) IsLogIn()  {}
+
+// Result showing that User information is invalid for a given reason
+type InvalidUser struct {
+	// Username that is invalid
+	Username string `json:"username"`
+	// Given reason why it is invalid
+	Reason string `json:"reason"`
+}
+
+func (InvalidUser) IsSignUp() {}
+func (InvalidUser) IsLogIn()  {}
 
 // User with the ID are not in the room
 type NotAParticipant struct {

@@ -1,82 +1,74 @@
-#"""
-#User account for PaperChat
-#"""
-#type User implements Identifiable {
-#    "User ID"
-#    id: ID!
-#
-#    "Unique username for this User"
-#    username: String!
-#}
-#
-#"""
-#User credential result
-#"""
-#type Credentials {
-#    "JWT Access token"
-#    accessToken: String!
-#
-#    "JWT Access token expiration date"
-#    expireAt: String!
-#
-#    "User information"
-#    user: User!
-#}
-#
-#"""
-#Result showing that User information is invalid for a given reason
-#"""
-#type InvalidUser {
-#    "Username that is invalid"
-#    username: String!
-#
-#    "Given reason why it is invalid"
-#    reason: String!
-#}
-#
-#"""
-#Result showing that required credential is invalid
-#"""
-#type InvalidCredential {
-#    "Username attached"
-#    username: String!
-#
-#    "Invalid password"
-#    password: String!
-#}
-#
-#
-#"""
-#SignUp Authentication result
-#"""
-#union SignUp = Credentials | InvalidUser
-#
-#"""
-#LogIn Authentication result
-#"""
-#union LogIn = Credentials | InvalidUser | InvalidCredential
-#
-#extend type Query {
-#    """
-#    Check for the current user authentication logged in in for this client
-#    """
-#    me: User
-#}
-#
-#extend type Mutation {
-#    """
-#    Sign up a new account
-#    """
-#    signup(username: String!, password: String!): SignUp
-#
-#    """
-#    Login an exisiting account
-#    """
-#    login(username: String!, password: String!): SignUp
-#}
-#
+"""
+User account for PaperChat
+"""
+type User implements Identifiable {
+    "User ID"
+    id: ID!
 
-## -- Utility types --
+    "Unique username for this User"
+    username: String!
+}
+
+# -- Extend Query, Mutation, or Subscription --
+
+extend type Query {
+    """
+    Check for the current user authentication logged in in for this client
+    """
+    me: User
+}
+
+extend type Mutation {
+    """
+    Sign up a new account
+    """
+    signup(username: String!): SignUp
+
+    """
+    Login an exisiting account
+    """
+    login(username: String!): LogIn
+}
+
+
+# -- Union types --
+
+"""
+SignUp Authentication result
+"""
+union SignUp = Credentials | InvalidUser
+
+"""
+LogIn Authentication result
+"""
+union LogIn = Credentials | InvalidUser
+
+# -- Utility types --
+
+"""
+User credential result
+"""
+type Credentials {
+    "JWT Access token"
+    accessToken: String!
+
+    "JWT Access token expiration date"
+    expireAt: String!
+
+    "User information"
+    user: User!
+}
+
+"""
+Result showing that User information is invalid for a given reason
+"""
+type InvalidUser {
+    "Username that is invalid"
+    username: String!
+
+    "Given reason why it is invalid"
+    reason: String!
+}
 
 "No use authentication found"
 type NotLoggedIn {

@@ -16,6 +16,7 @@ import (
 	"github.com/d-exclaimation/paper-chat/config"
 	"github.com/d-exclaimation/paper-chat/db"
 	graph "github.com/d-exclaimation/paper-chat/graphql"
+	"github.com/d-exclaimation/paper-chat/graphql/auth"
 	"github.com/d-exclaimation/paper-chat/graphql/gql"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -44,6 +45,8 @@ func main() {
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		AllowCredentials: true,
 	}))
+
+	r.Use(auth.Middleware)
 
 	resolver := graph.MakeResolver(mongo.Database("paper-chat"))
 

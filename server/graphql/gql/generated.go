@@ -39,6 +39,7 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
 	Room() RoomResolver
+	User() UserResolver
 }
 
 type DirectiveRoot struct {
@@ -50,11 +51,24 @@ type ComplexityRoot struct {
 		Username func(childComplexity int) int
 	}
 
+	Credentials struct {
+		AccessToken func(childComplexity int) int
+		ExpireAt    func(childComplexity int) int
+		User        func(childComplexity int) int
+	}
+
+	InvalidUser struct {
+		Reason   func(childComplexity int) int
+		Username func(childComplexity int) int
+	}
+
 	Mutation struct {
 		CreateRoom func(childComplexity int, title string) int
 		Hello      func(childComplexity int, msg string) int
 		JoinRoom   func(childComplexity int, id string) int
 		LeaveRoom  func(childComplexity int, id string) int
+		Login      func(childComplexity int, username string) int
+		Signup     func(childComplexity int, username string) int
 	}
 
 	NotAParticipant struct {
@@ -72,6 +86,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Hello func(childComplexity int) int
+		Me    func(childComplexity int) int
 		Room  func(childComplexity int, id string) int
 	}
 
@@ -87,6 +102,11 @@ type ComplexityRoot struct {
 	RoomSuccessOperation struct {
 		Payload func(childComplexity int) int
 	}
+
+	User struct {
+		ID       func(childComplexity int) int
+		Username func(childComplexity int) int
+	}
 }
 
 type MutationResolver interface {
@@ -94,13 +114,19 @@ type MutationResolver interface {
 	CreateRoom(ctx context.Context, title string) (model.CreateResult, error)
 	JoinRoom(ctx context.Context, id string) (model.JoinResult, error)
 	LeaveRoom(ctx context.Context, id string) (model.LeaveResult, error)
+	Signup(ctx context.Context, username string) (model.SignUp, error)
+	Login(ctx context.Context, username string) (model.LogIn, error)
 }
 type QueryResolver interface {
 	Hello(ctx context.Context) (string, error)
 	Room(ctx context.Context, id string) (*model.Room, error)
+	Me(ctx context.Context) (*model.User, error)
 }
 type RoomResolver interface {
 	ID(ctx context.Context, obj *model.Room) (string, error)
+}
+type UserResolver interface {
+	ID(ctx context.Context, obj *model.User) (string, error)
 }
 
 type executableSchema struct {
@@ -131,6 +157,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AlreadyJoined.Username(childComplexity), true
+
+	case "Credentials.accessToken":
+		if e.complexity.Credentials.AccessToken == nil {
+			break
+		}
+
+		return e.complexity.Credentials.AccessToken(childComplexity), true
+
+	case "Credentials.expireAt":
+		if e.complexity.Credentials.ExpireAt == nil {
+			break
+		}
+
+		return e.complexity.Credentials.ExpireAt(childComplexity), true
+
+	case "Credentials.user":
+		if e.complexity.Credentials.User == nil {
+			break
+		}
+
+		return e.complexity.Credentials.User(childComplexity), true
+
+	case "InvalidUser.reason":
+		if e.complexity.InvalidUser.Reason == nil {
+			break
+		}
+
+		return e.complexity.InvalidUser.Reason(childComplexity), true
+
+	case "InvalidUser.username":
+		if e.complexity.InvalidUser.Username == nil {
+			break
+		}
+
+		return e.complexity.InvalidUser.Username(childComplexity), true
 
 	case "Mutation.createRoom":
 		if e.complexity.Mutation.CreateRoom == nil {
@@ -180,6 +241,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.LeaveRoom(childComplexity, args["id"].(string)), true
 
+	case "Mutation.login":
+		if e.complexity.Mutation.Login == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_login_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Login(childComplexity, args["username"].(string)), true
+
+	case "Mutation.signup":
+		if e.complexity.Mutation.Signup == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_signup_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Signup(childComplexity, args["username"].(string)), true
+
 	case "NotAParticipant.id":
 		if e.complexity.NotAParticipant.ID == nil {
 			break
@@ -214,6 +299,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Hello(childComplexity), true
+
+	case "Query.me":
+		if e.complexity.Query.Me == nil {
+			break
+		}
+
+		return e.complexity.Query.Me(childComplexity), true
 
 	case "Query.room":
 		if e.complexity.Query.Room == nil {
@@ -254,6 +346,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RoomSuccessOperation.Payload(childComplexity), true
+
+	case "User.id":
+		if e.complexity.User.ID == nil {
+			break
+		}
+
+		return e.complexity.User.ID(childComplexity), true
+
+	case "User.username":
+		if e.complexity.User.Username == nil {
+			break
+		}
+
+		return e.complexity.User.Username(childComplexity), true
 
 	}
 	return 0, false
@@ -420,85 +526,77 @@ schema {
     query: Query
     mutation: Mutation
 }`, BuiltIn: false},
-	{Name: "graphql/user.graphql", Input: `#"""
-#User account for PaperChat
-#"""
-#type User implements Identifiable {
-#    "User ID"
-#    id: ID!
-#
-#    "Unique username for this User"
-#    username: String!
-#}
-#
-#"""
-#User credential result
-#"""
-#type Credentials {
-#    "JWT Access token"
-#    accessToken: String!
-#
-#    "JWT Access token expiration date"
-#    expireAt: String!
-#
-#    "User information"
-#    user: User!
-#}
-#
-#"""
-#Result showing that User information is invalid for a given reason
-#"""
-#type InvalidUser {
-#    "Username that is invalid"
-#    username: String!
-#
-#    "Given reason why it is invalid"
-#    reason: String!
-#}
-#
-#"""
-#Result showing that required credential is invalid
-#"""
-#type InvalidCredential {
-#    "Username attached"
-#    username: String!
-#
-#    "Invalid password"
-#    password: String!
-#}
-#
-#
-#"""
-#SignUp Authentication result
-#"""
-#union SignUp = Credentials | InvalidUser
-#
-#"""
-#LogIn Authentication result
-#"""
-#union LogIn = Credentials | InvalidUser | InvalidCredential
-#
-#extend type Query {
-#    """
-#    Check for the current user authentication logged in in for this client
-#    """
-#    me: User
-#}
-#
-#extend type Mutation {
-#    """
-#    Sign up a new account
-#    """
-#    signup(username: String!, password: String!): SignUp
-#
-#    """
-#    Login an exisiting account
-#    """
-#    login(username: String!, password: String!): SignUp
-#}
-#
+	{Name: "graphql/user.graphql", Input: `"""
+User account for PaperChat
+"""
+type User implements Identifiable {
+    "User ID"
+    id: ID!
 
-## -- Utility types --
+    "Unique username for this User"
+    username: String!
+}
+
+# -- Extend Query, Mutation, or Subscription --
+
+extend type Query {
+    """
+    Check for the current user authentication logged in in for this client
+    """
+    me: User
+}
+
+extend type Mutation {
+    """
+    Sign up a new account
+    """
+    signup(username: String!): SignUp
+
+    """
+    Login an exisiting account
+    """
+    login(username: String!): LogIn
+}
+
+
+# -- Union types --
+
+"""
+SignUp Authentication result
+"""
+union SignUp = Credentials | InvalidUser
+
+"""
+LogIn Authentication result
+"""
+union LogIn = Credentials | InvalidUser
+
+# -- Utility types --
+
+"""
+User credential result
+"""
+type Credentials {
+    "JWT Access token"
+    accessToken: String!
+
+    "JWT Access token expiration date"
+    expireAt: String!
+
+    "User information"
+    user: User!
+}
+
+"""
+Result showing that User information is invalid for a given reason
+"""
+type InvalidUser {
+    "Username that is invalid"
+    username: String!
+
+    "Given reason why it is invalid"
+    reason: String!
+}
 
 "No use authentication found"
 type NotLoggedIn {
@@ -569,6 +667,36 @@ func (ec *executionContext) field_Mutation_leaveRoom_args(ctx context.Context, r
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["username"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["username"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_signup_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["username"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["username"] = arg0
 	return args, nil
 }
 
@@ -694,6 +822,181 @@ func (ec *executionContext) _AlreadyJoined_username(ctx context.Context, field g
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Username, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Credentials_accessToken(ctx context.Context, field graphql.CollectedField, obj *model.Credentials) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Credentials",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AccessToken, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Credentials_expireAt(ctx context.Context, field graphql.CollectedField, obj *model.Credentials) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Credentials",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExpireAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Credentials_user(ctx context.Context, field graphql.CollectedField, obj *model.Credentials) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Credentials",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.User, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _InvalidUser_username(ctx context.Context, field graphql.CollectedField, obj *model.InvalidUser) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "InvalidUser",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Username, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _InvalidUser_reason(ctx context.Context, field graphql.CollectedField, obj *model.InvalidUser) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "InvalidUser",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reason, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -876,6 +1179,84 @@ func (ec *executionContext) _Mutation_leaveRoom(ctx context.Context, field graph
 	res := resTmp.(model.LeaveResult)
 	fc.Result = res
 	return ec.marshalNLeaveResult2githubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐLeaveResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_signup(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_signup_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Signup(rctx, args["username"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(model.SignUp)
+	fc.Result = res
+	return ec.marshalOSignUp2githubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐSignUp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_login_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Login(rctx, args["username"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(model.LogIn)
+	fc.Result = res
+	return ec.marshalOLogIn2githubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐLogIn(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NotAParticipant_id(ctx context.Context, field graphql.CollectedField, obj *model.NotAParticipant) (ret graphql.Marshaler) {
@@ -1089,6 +1470,38 @@ func (ec *executionContext) _Query_room(ctx context.Context, field graphql.Colle
 	return ec.marshalORoom2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐRoom(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_me(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Me(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalOUser2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1298,6 +1711,76 @@ func (ec *executionContext) _RoomSuccessOperation_payload(ctx context.Context, f
 	res := resTmp.(*model.Room)
 	fc.Result = res
 	return ec.marshalNRoom2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐRoom(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().ID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_username(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Username, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -2467,6 +2950,13 @@ func (ec *executionContext) _Identifiable(ctx context.Context, sel ast.Selection
 			return graphql.Null
 		}
 		return ec._Room(ctx, sel, obj)
+	case model.User:
+		return ec._User(ctx, sel, &obj)
+	case *model.User:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._User(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -2560,6 +3050,52 @@ func (ec *executionContext) _LeaveResult(ctx context.Context, sel ast.SelectionS
 	}
 }
 
+func (ec *executionContext) _LogIn(ctx context.Context, sel ast.SelectionSet, obj model.LogIn) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.Credentials:
+		return ec._Credentials(ctx, sel, &obj)
+	case *model.Credentials:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Credentials(ctx, sel, obj)
+	case model.InvalidUser:
+		return ec._InvalidUser(ctx, sel, &obj)
+	case *model.InvalidUser:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._InvalidUser(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
+func (ec *executionContext) _SignUp(ctx context.Context, sel ast.SelectionSet, obj model.SignUp) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.Credentials:
+		return ec._Credentials(ctx, sel, &obj)
+	case *model.Credentials:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Credentials(ctx, sel, obj)
+	case model.InvalidUser:
+		return ec._InvalidUser(ctx, sel, &obj)
+	case *model.InvalidUser:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._InvalidUser(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
@@ -2582,6 +3118,75 @@ func (ec *executionContext) _AlreadyJoined(ctx context.Context, sel ast.Selectio
 			}
 		case "username":
 			out.Values[i] = ec._AlreadyJoined_username(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var credentialsImplementors = []string{"Credentials", "SignUp", "LogIn"}
+
+func (ec *executionContext) _Credentials(ctx context.Context, sel ast.SelectionSet, obj *model.Credentials) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, credentialsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Credentials")
+		case "accessToken":
+			out.Values[i] = ec._Credentials_accessToken(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "expireAt":
+			out.Values[i] = ec._Credentials_expireAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "user":
+			out.Values[i] = ec._Credentials_user(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var invalidUserImplementors = []string{"InvalidUser", "SignUp", "LogIn"}
+
+func (ec *executionContext) _InvalidUser(ctx context.Context, sel ast.SelectionSet, obj *model.InvalidUser) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, invalidUserImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InvalidUser")
+		case "username":
+			out.Values[i] = ec._InvalidUser_username(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "reason":
+			out.Values[i] = ec._InvalidUser_reason(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2631,6 +3236,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "signup":
+			out.Values[i] = ec._Mutation_signup(ctx, field)
+		case "login":
+			out.Values[i] = ec._Mutation_login(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2765,6 +3374,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_room(ctx, field)
 				return res
 			})
+		case "me":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_me(ctx, field)
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
@@ -2863,6 +3483,47 @@ func (ec *executionContext) _RoomSuccessOperation(ctx context.Context, sel ast.S
 			out.Values[i] = ec._RoomSuccessOperation_payload(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var userImplementors = []string{"User", "Identifiable"}
+
+func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *model.User) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("User")
+		case "id":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_id(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "username":
+			out.Values[i] = ec._User_username(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -3210,6 +3871,16 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
+func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._User(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
 	return ec.___Directive(ctx, sel, &v)
 }
@@ -3491,11 +4162,25 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return graphql.MarshalBoolean(*v)
 }
 
+func (ec *executionContext) marshalOLogIn2githubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐLogIn(ctx context.Context, sel ast.SelectionSet, v model.LogIn) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LogIn(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalORoom2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐRoom(ctx context.Context, sel ast.SelectionSet, v *model.Room) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Room(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOSignUp2githubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐSignUp(ctx context.Context, sel ast.SelectionSet, v model.SignUp) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._SignUp(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
@@ -3520,6 +4205,13 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 		return graphql.Null
 	}
 	return graphql.MarshalString(*v)
+}
+
+func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._User(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

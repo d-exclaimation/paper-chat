@@ -48,3 +48,10 @@ func MongoURI() string {
 	}
 	return "mongodb://localhost/paper-chat"
 }
+
+func TokenSecret() []byte {
+	if secret, ok := os.LookupEnv("TOKEN_SECRET"); ok {
+		return []byte(secret)
+	}
+	return []byte("my-secret-token")
+}
