@@ -9,6 +9,9 @@ type Room implements Identifiable {
 
     "Title or Quick description for this Room"
     title: String!
+
+    "Participants for this room"
+    participant: [User!]!
 }
 
 # -- Extend Query, Mutation, or Subscription --
@@ -58,7 +61,6 @@ type RoomSuccessOperation {
 
 "User with the ID and coresponding username already in the room"
 type AlreadyJoined {
-    # TODO: Use User instead when auth was implemented
     "User ID Given"
     id: ID!
     "Coresponding Username"
@@ -73,7 +75,6 @@ type RoomDoesntExist {
 
 "User with the ID are not in the room"
 type NotAParticipant {
-    # TODO: Use User instead when auth was implemented
     "User ID Given"
     id: ID!
     "Coresponding Username"

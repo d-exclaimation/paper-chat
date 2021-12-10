@@ -5,7 +5,6 @@ package graphql
 
 import (
 	"context"
-
 	"github.com/d-exclaimation/paper-chat/db/rooms"
 	"github.com/d-exclaimation/paper-chat/graphql/auth"
 	"github.com/d-exclaimation/paper-chat/graphql/gql"
@@ -50,7 +49,7 @@ func (r *queryResolver) Room(ctx context.Context, id string) (*model.Room, error
 	return <-rooms.GetById(r.db, oid, ctx), nil
 }
 
-func (r *roomResolver) ID(ctx context.Context, obj *model.Room) (string, error) {
+func (r *roomResolver) ID(_ context.Context, obj *model.Room) (string, error) {
 	return obj.OID.Hex(), nil
 }
 

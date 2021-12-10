@@ -9,11 +9,11 @@ import (
 	"github.com/d-exclaimation/paper-chat/graphql/gql"
 )
 
-func (r *mutationResolver) Hello(ctx context.Context, msg string) (string, error) {
+func (r *mutationResolver) Hello(_ context.Context, msg string) (string, error) {
 	return msg, nil
 }
 
-func (r *queryResolver) Hello(ctx context.Context) (string, error) {
+func (r *queryResolver) Hello(_ context.Context) (string, error) {
 	return "", nil
 }
 

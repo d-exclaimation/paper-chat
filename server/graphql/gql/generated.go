@@ -91,8 +91,9 @@ type ComplexityRoot struct {
 	}
 
 	Room struct {
-		ID    func(childComplexity int) int
-		Title func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Participant func(childComplexity int) int
+		Title       func(childComplexity int) int
 	}
 
 	RoomDoesntExist struct {
@@ -326,6 +327,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Room.ID(childComplexity), true
 
+	case "Room.participant":
+		if e.complexity.Room.Participant == nil {
+			break
+		}
+
+		return e.complexity.Room.Participant(childComplexity), true
+
 	case "Room.title":
 		if e.complexity.Room.Title == nil {
 			break
@@ -436,6 +444,9 @@ type Room implements Identifiable {
 
     "Title or Quick description for this Room"
     title: String!
+
+    "Participants for this room"
+    participant: [User!]!
 }
 
 # -- Extend Query, Mutation, or Subscription --
@@ -485,7 +496,6 @@ type RoomSuccessOperation {
 
 "User with the ID and coresponding username already in the room"
 type AlreadyJoined {
-    # TODO: Use User instead when auth was implemented
     "User ID Given"
     id: ID!
     "Coresponding Username"
@@ -500,7 +510,6 @@ type RoomDoesntExist {
 
 "User with the ID are not in the room"
 type NotAParticipant {
-    # TODO: Use User instead when auth was implemented
     "User ID Given"
     id: ID!
     "Coresponding Username"
@@ -1641,6 +1650,41 @@ func (ec *executionContext) _Room_title(ctx context.Context, field graphql.Colle
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Room_participant(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Room",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Participant, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚕᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐUserᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RoomDoesntExist_id(ctx context.Context, field graphql.CollectedField, obj *model.RoomDoesntExist) (ret graphql.Marshaler) {
@@ -3430,6 +3474,11 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "participant":
+			out.Values[i] = ec._Room_participant(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3869,6 +3918,50 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNUser2ᚕᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNUser2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐUser(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋdᚑexclaimationᚋpaperᚑchatᚋgraphqlᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {

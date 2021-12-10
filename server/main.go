@@ -60,9 +60,7 @@ func main() {
 	srv.AddTransport(transport.Websocket{
 		KeepAlivePingInterval: 10 * time.Second,
 		Upgrader: websocket.Upgrader{
-			CheckOrigin: func(r *http.Request) bool {
-				return true
-			},
+			CheckOrigin: func(r *http.Request) bool { return true },
 		},
 	})
 
