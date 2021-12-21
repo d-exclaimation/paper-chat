@@ -20,36 +20,36 @@ type EventEmitter struct {
 	consumers map[chan *model.Message]Void
 
 	// -- Channels --
-	registerChannel  chan chan *model.Message
-	terminateChannel chan chan *model.Message
-	messageChannel   chan *model.Message
-	acidChannel      chan Void
+	onRegister     chan chan *model.Message
+	onTerminate chan chan *model.Message
+	onMessage chan *model.Message
+	onAcid    chan Void
 }
 
 func New() *EventEmitter {
 	emitter := &EventEmitter{
-		consumers:        make(map[chan *model.Message]Void),
-		registerChannel:  make(chan chan *model.Message),
-		terminateChannel: make(chan chan *model.Message),
-		messageChannel:   make(chan *model.Message),
-		acidChannel:      make(chan Void),
+		consumers:   make(map[chan *model.Message]Void),
+		onRegister:  make(chan chan *model.Message),
+		onTerminate: make(chan chan *model.Message),
+		onMessage:   make(chan *model.Message),
+		onAcid:      make(chan Void),
 	}
-	go emitter.onMessage()
+	go emitter.onReceive()
 	return emitter
 }
 
-func (e *EventEmitter) onMessage() {
+func (e *EventEmitter) onReceive() {
 	for {
 		select {
-		case registeredConsumer := <-e.registerChannel:
+		case registeredConsumer := <-e.onRegister:
 			e.consumers[registeredConsumer] = Void{}
-		case terminatedConsumer := <-e.terminateChannel:
+		case terminatedConsumer := <-e.onTerminate:
 			delete(e.consumers, terminatedConsumer)
-		case message := <-e.messageChannel:
+		case message := <-e.onMessage:
 			for consumer, _ := range e.consumers {
 				consumer <- message
 			}
-		case <-e.acidChannel:
+		case <-e.onAcid:
 			for consumer, _ := range e.consumers {
 				close(consumer)
 				delete(e.consumers, consumer)
@@ -60,20 +60,20 @@ func (e *EventEmitter) onMessage() {
 
 func (e *EventEmitter) Consumer(ctx context.Context) chan *model.Message {
 	consumer := make(chan *model.Message)
-	e.registerChannel <- consumer
+	e.onRegister <- consumer
 
 	go func() {
 		<-ctx.Done()
-		e.terminateChannel <- consumer
+		e.onTerminate <- consumer
 	}()
 
 	return consumer
 }
 
 func (e *EventEmitter) Produce(message *model.Message) {
-	e.messageChannel <- message
+	e.onMessage <- message
 }
 
 func (e *EventEmitter) End() {
-	e.acidChannel <- Void{}
+	e.onAcid <- Void{}
 }
