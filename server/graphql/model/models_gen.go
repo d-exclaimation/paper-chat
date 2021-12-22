@@ -26,12 +26,17 @@ type LogIn interface {
 	IsLogIn()
 }
 
+// Sending message result
+type SendResult interface {
+	IsSendResult()
+}
+
 // SignUp Authentication result
 type SignUp interface {
 	IsSignUp()
 }
 
-// User with the ID and coresponding username already in the room
+// User with the ID and corresponding username already in the room
 type AlreadyJoined struct {
 	// User ID Given
 	ID string `json:"id"`
@@ -73,6 +78,7 @@ type NotAParticipant struct {
 	Username string `json:"username"`
 }
 
+func (NotAParticipant) IsSendResult()  {}
 func (NotAParticipant) IsLeaveResult() {}
 
 // No use authentication found
@@ -81,6 +87,7 @@ type NotLoggedIn struct {
 	Username *string `json:"username"`
 }
 
+func (NotLoggedIn) IsSendResult()   {}
 func (NotLoggedIn) IsJoinResult()   {}
 func (NotLoggedIn) IsLeaveResult()  {}
 func (NotLoggedIn) IsCreateResult() {}
@@ -99,6 +106,7 @@ type RoomDoesntExist struct {
 	ID string `json:"id"`
 }
 
+func (RoomDoesntExist) IsSendResult()  {}
 func (RoomDoesntExist) IsJoinResult()  {}
 func (RoomDoesntExist) IsLeaveResult() {}
 
@@ -111,3 +119,11 @@ type RoomSuccessOperation struct {
 func (RoomSuccessOperation) IsJoinResult()   {}
 func (RoomSuccessOperation) IsLeaveResult()  {}
 func (RoomSuccessOperation) IsCreateResult() {}
+
+// Successfully send message
+type SendSuccessful struct {
+	// Message being sent
+	Message *Message `json:"message"`
+}
+
+func (SendSuccessful) IsSendResult() {}

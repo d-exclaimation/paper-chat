@@ -6,8 +6,12 @@ type Mutation {
     hello(msg: String!): String!
 }
 
+type Subscription {
+    hello: String!
+}
+
 interface Identifiable {
-  id: ID!
+    id: ID!
 }
 
 type OperationFailed {
@@ -17,4 +21,11 @@ type OperationFailed {
 schema {
     query: Query
     mutation: Mutation
+    subscription: Subscription
 }
+
+scalar Int
+scalar Float
+scalar String
+scalar Boolean
+scalar ID

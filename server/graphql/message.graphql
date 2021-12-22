@@ -1,0 +1,43 @@
+# -- Base type --
+
+"""
+Message data type describing a message sent to a certain room
+"""
+type Message {
+    "Message content / string value"
+    value: String!
+
+    "Created at timestamp in ISO string format"
+    createdAt: String!
+}
+
+# -- Extend Query, Mutation, or Subscription --
+
+extend type Mutation {
+    send(roomID: ID!, content: String!): SendResult!
+}
+
+extend type Subscription {
+    """
+    Chat room feed, giving all messages for a specific room
+    """
+    chat(roomID: ID!): Message!
+}
+
+# -- Union types --
+
+"""
+Sending message result
+"""
+union SendResult = SendSuccessful | NotAParticipant | NotLoggedIn | RoomDoesntExist
+
+# -- Utility types --
+
+"""
+Successfully send message
+"""
+type SendSuccessful {
+    "Message being sent"
+    message: Message!
+}
+

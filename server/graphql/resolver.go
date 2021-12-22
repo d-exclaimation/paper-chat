@@ -1,6 +1,9 @@
 package graphql
 
-import "go.mongodb.org/mongo-driver/mongo"
+import (
+	"github.com/d-exclaimation/paper-chat/streaming/pubsub"
+	"go.mongodb.org/mongo-driver/mongo"
+)
 
 // This file will not be regenerated automatically.
 //
@@ -8,8 +11,9 @@ import "go.mongodb.org/mongo-driver/mongo"
 
 type Resolver struct {
 	db *mongo.Database
+	pubsub *pubsub.EventPubSub
 }
 
 func MakeResolver(db *mongo.Database) *Resolver {
-	return &Resolver{db}
+	return &Resolver{db, pubsub.New()}
 }

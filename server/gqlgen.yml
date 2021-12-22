@@ -54,3 +54,5 @@ models:
     model: github.com/d-exclaimation/paper-chat/graphql/model.Room
   User:
     model: github.com/d-exclaimation/paper-chat/graphql/model.User
+  Message:
+    model: github.com/d-exclaimation/paper-chat/graphql/model.Message

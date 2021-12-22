@@ -54,7 +54,7 @@ func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 	return <-auth.Auth(r.db, ctx), nil
 }
 
-func (r *userResolver) ID(_ context.Context, obj *model.User) (string, error) {
+func (r *userResolver) ID(ctx context.Context, obj *model.User) (string, error) {
 	return obj.OID.Hex(), nil
 }
 

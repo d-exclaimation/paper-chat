@@ -59,7 +59,7 @@ type RoomSuccessOperation {
     payload: Room!
 }
 
-"User with the ID and coresponding username already in the room"
+"User with the ID and corresponding username already in the room"
 type AlreadyJoined {
     "User ID Given"
     id: ID!
