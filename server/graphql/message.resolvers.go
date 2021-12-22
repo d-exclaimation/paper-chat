@@ -31,6 +31,19 @@ func (r *mutationResolver) Send(ctx context.Context, roomID string, content stri
 		return model.NotLoggedIn{Username: nil}, nil
 	}
 
+	isParticipant := false
+	for _, participant := range room.Participant {
+		if participant.OID.Hex() == user.OID.Hex() && participant.Username == user.Username {
+			isParticipant = true
+			break
+		}
+	}
+
+	if !isParticipant {
+		return model.NotAParticipant{ID: user.OID.Hex(), Username: user.Username}, nil
+	}
+
+	// TODO: Save to database
 	msg := &model.Message{
 		OID:       primitive.NewObjectID(),
 		Value:     content,
@@ -55,13 +68,17 @@ func (r *subscriptionResolver) Chat(ctx context.Context, roomID string) (<-chan 
 		return nil, errors.New("room doesn't exist")
 	}
 
-	messagesStream := messages.GetByRoom(r.db, oid, ctx)
+	messagesFuture := messages.GetByRoom(r.db, oid, ctx)
 
 	channel := r.pubsub.Stream(roomID, ctx)
 
 	go func() {
-		for message := range messagesStream {
-			channel <- message
+		msgs := <-messagesFuture
+		if msgs == nil {
+			return
+		}
+		for _, message := range msgs {
+			channel <- &message
 		}
 	}()
 

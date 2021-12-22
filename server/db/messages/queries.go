@@ -16,8 +16,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func GetByRoom(db *mongo.Database, roomOID primitive.ObjectID, ctx context.Context) <-chan *model.Message {
-	task := make(chan *model.Message)
+func GetByRoom(db *mongo.Database, roomOID primitive.ObjectID, ctx context.Context) <-chan []model.Message {
+	task := make(chan []model.Message)
 	go func() {
 		var messages []model.Message
 		find, err := db.Collection("messages").
@@ -25,18 +25,18 @@ func GetByRoom(db *mongo.Database, roomOID primitive.ObjectID, ctx context.Conte
 				"room_id": roomOID.Hex(),
 			})
 		if err != nil {
+			task <- nil
 			close(task)
 			return
 		}
 		err = find.All(ctx, messages)
 		if err != nil {
+			task <- nil
 			close(task)
 			return
 		}
 
-		for _, message := range messages {
-			task <- &message
-		}
+		task <- messages
 		close(task)
 	}()
 	return task
